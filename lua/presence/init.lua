@@ -3,6 +3,7 @@ local state = require("presence.state")
 local api = require("presence.api")
 local heartbeat = require("presence.scheduler")
 local Status = require("presence.status")
+local debounce = require("presence.debounce")
 
 local M = {}
 
@@ -10,16 +11,29 @@ local live = true
 
 local neovim_status = nil
 local event_autocmds = nil
+local debounced_send = nil
 
-local function send()
+local function send_immediately()
 	if not live then
 		return
 	end
 
 	if not config.options.enabled or not neovim_status then return end
 
-	local presence = neovim_status:create_presence(state.collect())
+	local current_state, has_changed = state.collect()
+	if not has_changed then
+		return
+	end
+
+	local presence = neovim_status:create_presence(current_state)
 	api.post(config.options, presence)
+end
+
+local function send()
+	if not debounced_send then
+		debounced_send = debounce.debounce(300, send_immediately)
+	end
+	debounced_send:call()
 end
 
 local function create_event_autocmds()
@@ -83,9 +97,12 @@ end
 function M.stop()
 	live = false
 	heartbeat.stop()
+	if debounced_send then
+		debounced_send:flush()
+	end
 	if neovim_status then
 		neovim_status:set_offline()
-		send()
+		send_immediately()
 	end
 	clear_event_autocmds()
 end
@@ -93,6 +110,7 @@ end
 function M.start()
 	if not neovim_status then return end
 	live = true
+	state.reset_state()
 	neovim_status:set_online()
 	send()
 	heartbeat.start(config.options.heartbeat_interval, function()
