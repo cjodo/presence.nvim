@@ -1,5 +1,5 @@
 # presence.nvim
-💓 Pulse.nvim is an open-source Neovim plugin that broadcasts your editor activity to the web in real-time — Inspired by [cord.nvim](https://github.com/vyfor/cord.nvim/).
+💓 presence.nvim is an open-source Neovim plugin that broadcasts your editor activity to the web in real-time — Inspired by [cord.nvim](https://github.com/vyfor/cord.nvim/).
 
 Liven up your portfolio by adding a simple api to display your nvim status!! 
 
