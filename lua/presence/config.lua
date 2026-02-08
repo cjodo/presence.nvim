@@ -1,6 +1,7 @@
 local M = {}
 
 M.defaults = {
+	autostart = true,
 	endpoints = { "http://localhost:3000/presence" },
   user = "anonymous",
   token = nil,
