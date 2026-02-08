@@ -41,6 +41,24 @@ If you missed me heres a photo to demo!
     end
 }
 ```
+### Exaple POST
+
+```json5
+{
+  "project": "presence.nvim",
+  "user": "User",
+  "updated_at": 1770584360,
+  "session": "de545b3ccee713656f80e3ad18e6b61a6c1fd15d3938c56ec740a4a473ec31e5",
+  "filetype": "markdown",
+  "status": "online",
+  "file": "README.md",
+  "cwd": "/home/user/full/path",
+  "mode": "i",
+  "received_at": "2026-02-08T20:59:38.049Z"
+}
+
+```
+- make sure to check out the `examples/`
 
 #### Development
 For a look at the state being sent to your endpoints make sure to include localhost:3000/presence in your config.  
