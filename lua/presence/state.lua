@@ -1,3 +1,5 @@
+local git = require("presence.git")
+
 local M = {}
 
 function M.collect()
@@ -7,6 +9,7 @@ function M.collect()
   return {
     file = name ~= "" and vim.fn.fnamemodify(name, ":t") or nil,
     filetype = vim.bo.filetype,
+		project = git.get_git_project(),
     cwd = vim.loop.cwd(),
     mode = vim.fn.mode(),
   }

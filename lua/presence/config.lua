@@ -1,10 +1,10 @@
 local M = {}
 
 M.defaults = {
-  endpoint = "http://localhost:3000/presence",
+	endpoints = { "http://localhost:3000/presence" },
   user = "anonymous",
   token = nil,
-  heartbeat_interval = 30,
+  heartbeat_interval = 5,
   enabled = true,
 }
 
