@@ -6,9 +6,15 @@ local Status = require("presence.status")
 
 local M = {}
 
+local live = true
+
 local neovim_status = nil
 
 local function send()
+	if not live then
+		return
+	end
+
   if not config.options.enabled or not neovim_status then return end
 
   local presence = neovim_status:create_presence(state.collect())
@@ -58,6 +64,14 @@ end
 
 function M.is_online()
   return neovim_status and neovim_status:is_online() or false
+end
+
+function M.stop()
+	live = false
+end
+
+function M.start()
+	live = true
 end
 
 return M
