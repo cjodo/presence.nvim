@@ -1,0 +1,186 @@
+---
+import Layout from "../layouts/Layout.astro"
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Astro</title>
+	</head>
+	<body>
+		<Layout>
+			<div id="neovim-presence" class="w-full max-w-md p-6 bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl shadow-2xl border border-slate-700 text-white font-mono text-sm relative">
+				<div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-700">
+					<h3 class="text-lg font-semibold text-slate-200 flex items-center gap-2">
+						<svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+							<path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
+						</svg>
+						Neovim Status
+					</h3>
+					<div id="status-indicator" class="flex items-center gap-1">
+						<div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+						<span class="text-xs text-gray-400">Offline</span>
+					</div>
+				</div>
+
+				<div id="status-content" class="space-y-3">
+					<div class="flex items-center justify-center py-8 text-slate-500">
+						<div class="flex items-center gap-2">
+							<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+							</svg>
+							Loading…
+						</div>
+					</div>
+				</div>
+				<span class="absolute right-4 mt-1 text-slate-400 hover:underline"><a href="https://github.com/cjodo/presence.nvim">How I did this?</a></span>
+			</div>
+
+			<script is:inline>
+const container = document.getElementById("status-content");
+const indicator = document.getElementById("status-indicator");
+let currentSession = null;
+let lastUpdateTime = 0;
+
+const renderStatus = (session, isOffline = false) => {
+	console.log('[NeovimStatus] renderStatus called:', { session: session, isOffline: isOffline });
+
+	if (isOffline || !session) {
+		console.log('[NeovimStatus] Rendering offline state - isOffline:', isOffline, '!session:', !session);
+		indicator.innerHTML = '<div class="w-2 h-2 bg-gray-400 rounded-full"></div><span class="text-xs text-gray-400">Offline</span>';
+		container.innerHTML = `
+<div class="flex flex-col items-center justify-center py-8 text-gray-400">
+	<svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+		<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+	</svg>
+	<span class="font-medium">Offline</span>
+	<span class="text-xs mt-1">No active Neovim session</span>
+</div>
+`;
+	} else {
+		const timeSinceUpdate = (Date.now() - lastUpdateTime) / 1000;
+		const idle = timeSinceUpdate > 60;
+		const statusColor = idle ? 'yellow' : 'green';
+		const statusIcon = idle ? '🟡' : '🟢';
+		const statusText = idle ? 'Idle' : 'Active';
+
+		console.log('[NeovimStatus] Active session check:', {
+			timeSinceUpdate: timeSinceUpdate.toFixed(2) + 's',
+			idle: idle,
+			lastUpdateTime: new Date(lastUpdateTime).toISOString(),
+			currentTime: new Date().toISOString(),
+			sessionData: {
+				user: session.user,
+				file: session.file,
+				filetype: session.filetype,
+				cwd: session.cwd,
+				mode: session.mode,
+				received_at: session.received_at
+			}
+		});
+
+		indicator.innerHTML = `<div class="w-2 h-2 bg-${statusColor}-400 rounded-full ${idle ? '' : 'animate-pulse'}"></div><span class="text-xs text-${statusColor}-400">${statusText}</span>`;
+
+		container.innerHTML = `
+<div class="p-4 bg-slate-800/50 rounded-lg border border-slate-700 hover:border-${statusColor}-400 transition-colors">
+	<div class="flex items-center justify-between mb-3">
+		<div class="flex items-center gap-2">
+			<span class="text-lg">${statusIcon}</span>
+			<span class="font-semibold text-slate-200">${'Neovim'}</span>
+		</div>
+		<span class="text-xs px-2 py-1 bg-${statusColor}-500/20 text-${statusColor}-400 rounded-full border border-${statusColor}-500/30">
+			${statusText}
+		</span>
+	</div>
+
+	<div class="space-y-2 text-sm">
+		<div class="flex items-center gap-2">
+			<svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+			</svg>
+			<span class="text-slate-400">File:</span>
+			<span class="text-slate-200 font-medium">${session.file ?? 'unknown'}</span>
+			${session.filetype ? `<span class="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded border border-blue-500/30">${session.filetype}</span>` : ''}
+		</div>
+
+		${session.project ? `
+		<div class="flex items-center gap-2">
+			<svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+			</svg>
+
+			<span class="text-slate-400">Project:</span>
+			<span class="text-slate-300 font-medium text-xs">${session.project}</span>
+		</div>
+		` : ''}
+
+		${session.mode ? `
+		<div class="flex items-center gap-2">
+			<svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+			</svg>
+			<span class="text-slate-400">Mode:</span>
+			<span class="text-slate-200 font-medium">${session.mode}</span>
+		</div>
+		` : ''}
+	</div>
+
+	<div class="mt-3 pt-3 border-t border-slate-700 text-xs text-slate-500">
+		Last updated: ${new Date(session.received_at).toLocaleTimeString()}
+	</div>
+</div>
+`;
+	}
+};
+
+const evtSource = new EventSource("/api/presence/stream");
+
+evtSource.onmessage = (event) => {
+	const data = JSON.parse(event.data);
+	if (data.status == "online") {
+		currentSession = data;
+		lastUpdateTime = Date.now();
+		renderStatus(data, false);
+	} else {
+		console.log('[NeovimStatus] Non-online status received:', data.status);
+	}
+};
+
+evtSource.onerror = (err) => {
+	renderStatus(null, true);
+};
+
+
+// Check for offline status periodically
+setInterval(() => {
+	const timeSinceUpdate = currentSession ? (Date.now() - lastUpdateTime) / 1000 : Infinity;
+	const hasCurrentSession = !!currentSession;
+	const isIdle = hasCurrentSession && timeSinceUpdate > 5 && timeSinceUpdate <= 15;
+	const isOffline = !hasCurrentSession || timeSinceUpdate > 15;
+
+	console.log('[NeovimStatus] Periodic check:', {
+		hasCurrentSession,
+		timeSinceUpdate: timeSinceUpdate === Infinity ? 'never' : timeSinceUpdate.toFixed(2) + 's',
+		isIdle,
+		isOffline,
+		lastUpdateTime: currentSession ? new Date(lastUpdateTime).toISOString() : 'none'
+	});
+
+	if (isOffline) {
+		renderStatus(null, true); // Show offline after 15s
+	} else if (isIdle) {
+		renderStatus(currentSession, false); // Show idle between 5-15s
+	} else if (hasCurrentSession) {
+		renderStatus(currentSession, false); // Show active for first 5s
+	}
+}, 5000);
+			</script>
+
+		</Layout>
+	</body>
+</html>
