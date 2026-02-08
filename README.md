@@ -18,22 +18,29 @@ If you missed me heres a photo to demo!
 
 ```lua
 {
-  'cjodo/presence.nvim'
+    'cjodo/presence.nvim'
 }
 
 ```
 #### ⚙️ Configuring
+
 ```lua
 {
-  'cjodo/presence.nvim',
-  opts = {
-    endpoints = {
-        "http://localhost:8080/api/your-endpoint",
-        "http://localhost:3000/presence" --for the dev example server
-      },
-   }
- }
- ```
+    'cjodo/presence.nvim',
+    config = function()
+        -- defaults
+        require("presence").setup({
+            autostart = true,
+            endpoints = { "http://localhost:3000/presence" },
+            user = "anonymous",
+            token = nil,
+            heartbeat_interval = 5, 
+            enabled = true,
+
+        })
+    end
+}
+```
 
 #### Development
 For a look at the state being sent to your endpoints make sure to include localhost:3000/presence in your config.  
