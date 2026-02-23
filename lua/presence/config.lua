@@ -3,10 +3,11 @@ local M = {}
 M.defaults = {
 	autostart = true,
 	endpoints = { "http://localhost:3000/presence" },
-  user = "anonymous",
-  token = nil,
-  heartbeat_interval = 5,
-  enabled = true,
+	user = "anonymous",
+	token = nil,
+	heartbeat_interval = 5,
+	enabled = true,
+	endpoint_retry_interval = 30,
 }
 
 M.options = {}

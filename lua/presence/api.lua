@@ -1,11 +1,16 @@
+local endpoints = require("presence.endpoints")
+
 local M = {}
 
---TODO: Replace with http when more built out
 function M.post(config, payload)
-  local body = vim.json.encode(payload)
+	local body = vim.json.encode(payload)
+	local healthy_endpoints = endpoints.get_healthy_endpoints()
 
-	for _, endpoint in ipairs(config.endpoints) do
+	if #healthy_endpoints == 0 then
+		return
+	end
 
+	for _, endpoint in ipairs(healthy_endpoints) do
 		local cmd = {
 			"curl",
 			"-s",
@@ -20,11 +25,14 @@ function M.post(config, payload)
 			table.insert(cmd, 6, "Authorization: Bearer " .. config.token)
 		end
 
-		vim.system(cmd, { detach = true })
+		vim.system(cmd, { detach = true }, function(obj)
+			if obj.code == 0 then
+				endpoints.mark_success(endpoint)
+			else
+				endpoints.mark_failure(endpoint)
+			end
+		end)
 	end
-
-
 end
 
 return M
-

@@ -4,6 +4,7 @@ local api = require("presence.api")
 local heartbeat = require("presence.scheduler")
 local Status = require("presence.status")
 local debounce = require("presence.debounce")
+local endpoints = require("presence.endpoints")
 
 local M = {}
 
@@ -12,6 +13,7 @@ local live = true
 local neovim_status = nil
 local event_autocmds = nil
 local debounced_send = nil
+local endpoint_retry_timer = nil
 
 local function send_immediately()
 	if not live then
@@ -67,9 +69,37 @@ local function clear_event_autocmds()
 	end
 end
 
+local function start_endpoint_retry()
+	if endpoint_retry_timer then return end
+	local interval = config.options.endpoint_retry_interval or 30
+	endpoint_retry_timer = vim.loop.new_timer()
+	endpoint_retry_timer:start(
+		interval * 1000,
+		interval * 1000,
+		vim.schedule_wrap(function()
+			if not live then return end
+			if not endpoints.has_healthy_endpoints() then return end
+			local current_state, _ = state.collect()
+			if current_state then
+				local presence = neovim_status:create_presence(current_state)
+				api.post(config.options, presence)
+			end
+		end)
+	)
+end
+
+local function stop_endpoint_retry()
+	if endpoint_retry_timer then
+		endpoint_retry_timer:stop()
+		endpoint_retry_timer:close()
+		endpoint_retry_timer = nil
+	end
+end
+
 function M.setup(opts)
 	config.setup(opts)
 	neovim_status = Status.new(config.options)
+	endpoints.setup(config.options)
 
 	if config.options.autostart then
 		vim.api.nvim_create_autocmd("VimEnter", {
@@ -80,6 +110,7 @@ function M.setup(opts)
 					send()
 				end)
 				create_event_autocmds()
+				start_endpoint_retry()
 			end,
 		})
 	end
@@ -87,7 +118,9 @@ end
 
 -- Expose status methods for external access
 function M.get_status()
-	return neovim_status and neovim_status:get_status() or { status = "offline" }
+	local status = neovim_status and neovim_status:get_status() or { status = "offline" }
+	status.endpoints = endpoints.get_status()
+	return status
 end
 
 function M.is_online()
@@ -97,6 +130,7 @@ end
 function M.stop()
 	live = false
 	heartbeat.stop()
+	stop_endpoint_retry()
 	if debounced_send then
 		debounced_send:flush()
 	end
@@ -117,6 +151,7 @@ function M.start()
 		send()
 	end)
 	create_event_autocmds()
+	start_endpoint_retry()
 end
 
 return M
